@@ -4,7 +4,8 @@
 #include "Classes.h"
 #include <string>
 
-enum PieceType {
+enum PieceType
+{
     ROOK,
     KNIGHT,
     BISHOP,
@@ -12,26 +13,27 @@ enum PieceType {
     KING
 };
 
-
-void initializeBoard(Board& _board);
-void setUpBoard(Board& _board, std::vector<std::unique_ptr<Piece>>& whitePieces, std::vector<std::unique_ptr<Piece>>& blackPieces, Piece*& whiteKing, Piece*& blackKing);
-void drawBoard(Board& _board);
+void initializeBoard(Board &_board);
+void setUpBoard(Board &_board, std::vector<std::unique_ptr<Piece>> &whitePieces, std::vector<std::unique_ptr<Piece>> &blackPieces, Piece *&whiteKing, Piece *&blackKing);
+void drawBoard(Board &_board);
 std::unique_ptr<Piece> createPiece(PieceType type, Colour colour, int index);
-void mainLoop(Board& _board, std::vector<std::unique_ptr<Piece>>& whitePieces, std::vector<std::unique_ptr<Piece>>& blackPieces, Coordinates& whiteKingPos, Coordinates& blackKingPos, Piece* whiteKingPtr, Piece* blackKingPtr);
+void mainLoop(Board &_board, std::vector<std::unique_ptr<Piece>> &whitePieces, std::vector<std::unique_ptr<Piece>> &blackPieces, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr);
 ChessNotationType chessNotation(int x, int y);
 Coordinates fromNotationToPos(char file, char rank);
-int handleInput(std::string input, std::vector<Move>& allMoves);
-void makeMove(Move& move, Board& _board, Coordinates& whiteKingPos, Coordinates& blackKingPos, Piece* whiteKingPtr, Piece* blackKingPtr);
-bool isKingInCheck(Coordinates playerKingPos, std::vector<Coordinates> enemyMoves);
-
+int handleInput(std::string input, std::vector<Move> &allMoves);
+void makeMove(Move &move, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr);
+bool isKingInCheck(Coordinates playerKingPos, std::vector<Move> enemyMoves);
+void parseMoveVector(Board &_board, std::vector<Move> &legalMoves, std::vector<std::unique_ptr<Piece>> &piecesList);
+void inputMove(std::vector<Move> allMoves, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr);
+void undoMove(Move &move, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr);
 
 int main()
 {
     Board board;
     std::vector<std::unique_ptr<Piece>> whitePieces;
     std::vector<std::unique_ptr<Piece>> blackPieces;
-    Piece* whiteKingPointer = nullptr;
-    Piece* blackKingPoitner = nullptr;
+    Piece *whiteKingPointer = nullptr;
+    Piece *blackKingPoitner = nullptr;
     initializeBoard(board);
     setUpBoard(board, whitePieces, blackPieces, whiteKingPointer, blackKingPoitner);
     Coordinates whiteKingPos = board.findPiece(whiteKingPointer);
@@ -41,16 +43,21 @@ int main()
     return 0;
 }
 
-void initializeBoard(Board& _board) {
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
+void initializeBoard(Board &_board)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
             _board.setSquare(j, i, nullptr);
         }
     }
 }
 
-void setUpBoard(Board& _board, std::vector<std::unique_ptr<Piece>>& whitePieces, std::vector<std::unique_ptr<Piece>>& blackPieces, Piece*& whiteKing, Piece*& blackKing) {
-    for (int i = 0; i < 8; i++) {
+void setUpBoard(Board &_board, std::vector<std::unique_ptr<Piece>> &whitePieces, std::vector<std::unique_ptr<Piece>> &blackPieces, Piece *&whiteKing, Piece *&blackKing)
+{
+    for (int i = 0; i < 8; i++)
+    {
         auto pawn = std::make_unique<Pawn>(BLACK);
         _board.setSquare(i, 6, pawn.get());
         blackPieces.push_back(std::move(pawn));
@@ -58,37 +65,45 @@ void setUpBoard(Board& _board, std::vector<std::unique_ptr<Piece>>& whitePieces,
         _board.setSquare(i, 1, pawn.get());
         whitePieces.push_back(std::move(pawn));
     };
-    
+
     std::vector<PieceType> lineup = {
-        ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK
-    };
-    for (int i = 0; i < 8; i++) {
+        ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
+    for (int i = 0; i < 8; i++)
+    {
         std::unique_ptr<Piece> piece = createPiece(lineup[i], WHITE, i);
         _board.setSquare(i, 0, piece.get());
-        if (lineup[i] == KING) {
+        if (lineup[i] == KING)
+        {
             whiteKing = piece.get();
         }
         whitePieces.push_back(std::move(piece));
     }
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++)
+    {
         std::unique_ptr<Piece> piece = createPiece(lineup[i], BLACK, i);
         _board.setSquare(i, 7, piece.get());
-        if (lineup[i] == KING) {
+        if (lineup[i] == KING)
+        {
             blackKing = piece.get();
         }
         blackPieces.push_back(std::move(piece));
     }
 }
 
-void drawBoard(Board& _board) {
-    for (int i = 7; i >= 0; i--) {
-        for (int j = 0; j < 8; j++) {
-            const Piece* piece = _board.getSquare(j, i);
-            if (piece == nullptr) {
+void drawBoard(Board &_board)
+{
+    for (int i = 7; i >= 0; i--)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            const Piece *piece = _board.getSquare(j, i);
+            if (piece == nullptr)
+            {
                 std::cout << "0 ";
             }
-            else {
+            else
+            {
                 std::cout << piece->getSymbol() << " ";
             }
         }
@@ -96,9 +111,10 @@ void drawBoard(Board& _board) {
     }
 }
 
-
-std::unique_ptr<Piece> createPiece(PieceType type, Colour colour, int index) {
-    switch (type) {
+std::unique_ptr<Piece> createPiece(PieceType type, Colour colour, int index)
+{
+    switch (type)
+    {
     case ROOK:
         return std::make_unique<Rook>(colour, index == 7);
     case KNIGHT:
@@ -113,61 +129,75 @@ std::unique_ptr<Piece> createPiece(PieceType type, Colour colour, int index) {
     return nullptr;
 }
 
-
-void mainLoop(Board& _board, std::vector<std::unique_ptr<Piece>>& whitePieces, std::vector<std::unique_ptr<Piece>>& blackPieces, Coordinates& whiteKingPos, Coordinates& blackKingPos, Piece* whiteKingPtr, Piece* blackKingPtr) {
+void mainLoop(Board &_board, std::vector<std::unique_ptr<Piece>> &whitePieces, std::vector<std::unique_ptr<Piece>> &blackPieces, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr)
+{
     bool activeGame = true;
     Colour activePlayer = WHITE;
-    std::string input;
-    std::vector<Move>allWhiteMoves;
-    std::vector<Move>allBlackMoves;
-    while (activeGame) {
-        for (const auto& whitePiece : whitePieces) {
-            Coordinates pos = _board.findPiece(whitePiece.get());
-            std::vector<Coordinates> startingMoves = whitePiece->LegalMoves(_board, pos);
-
-        }
-        /*
-        allMoves.clear();
+    std::vector<Move> allWhiteMoves;
+    std::vector<Move> allBlackMoves;
+    std::vector<Move> legalWhiteMoves;
+    std::vector<Move> legalBlackMoves;
+    while (activeGame)
+    {
         system("cls");
         drawBoard(_board);
-        if (activePlayer == WHITE) {
-            for (const auto& i : whitePieces) {
-                Coordinates pos = _board.findPiece(i.get());
-                auto pseudoLegalMoves = i->LegalMoves(_board, pos);
-                for (const auto& m : pseudoLegalMoves) {
-                    Move move;
-                    move.piece = i.get();
-                    move.from = pos;
-                    move.to = m;
-                    move.fromNotation = chessNotation(pos.x, pos.y);
-                    move.toNotation = chessNotation(m.x, m.y);
-                    makeMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
-                    if (!isKingInCheck(whiteKingPos, pseudoLegalMoves)) {
-                        allMoves.push_back(move);
-                        std::cout << move.fromNotation.file << move.fromNotation.rank << move.toNotation.file << move.toNotation.rank << std::endl;
-                    }
-                    undoMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+        allWhiteMoves.clear();
+        allBlackMoves.clear();
+        legalWhiteMoves.clear();
+        legalBlackMoves.clear();
+        parseMoveVector(_board, allWhiteMoves, whitePieces);
+        parseMoveVector(_board, allBlackMoves, blackPieces);
+        if (activePlayer == WHITE)
+        {
+            for (auto &move : allWhiteMoves)
+            {
+                makeMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+                std::vector<Move> tempBlackMoves;
+                parseMoveVector(_board, tempBlackMoves, blackPieces);
+                if (!isKingInCheck(whiteKingPos, tempBlackMoves))
+                {
+                    legalWhiteMoves.push_back(move);
+                    std::cout << move.fromNotation.file << move.fromNotation.rank << move.toNotation.file << move.toNotation.rank << std::endl;
                 }
+                undoMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
             }
+            inputMove(legalWhiteMoves, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
         }
-        int moveIndex = 0;
-        do {
-            std::cin >> input;
-            moveIndex = handleInput(input, allMoves);
-        } while (moveIndex == -1);
-        Move move = allMoves[moveIndex];
-        _board.setSquare(move.to.x, move.to.y, move.piece);
-        _board.setSquare(move.from.x, move.from.y, nullptr);
-        move.piece->onMove();
-        */
+        if (activePlayer == BLACK)
+        {
+            for (auto &move : allBlackMoves)
+            {
+                makeMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+                std::vector<Move> tempWhiteMoves;
+                parseMoveVector(_board, tempWhiteMoves, whitePieces);
+                if (!isKingInCheck(blackKingPos, tempWhiteMoves))
+                {
+                    legalBlackMoves.push_back(move);
+                    std::cout << move.fromNotation.file << move.fromNotation.rank << move.toNotation.file << move.toNotation.rank << std::endl;
+                }
+                undoMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+            }
+            inputMove(legalBlackMoves, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+        }
+        if (activePlayer == WHITE)
+        {
+            activePlayer = BLACK;
+        }
+        else
+        {
+            activePlayer = WHITE;
+        }
     }
 }
 
-void makeMove(Move& move, Board& _board, Coordinates& whiteKingPos, Coordinates& blackKingPos, Piece* whiteKingPtr, Piece* blackKingPtr) {
-    if (move.piece = whiteKingPtr) {
+void makeMove(Move &move, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr)
+{
+    if (move.piece == whiteKingPtr)
+    {
         whiteKingPos = move.to;
     }
-    if (move.piece = blackKingPtr) {
+    if (move.piece == blackKingPtr)
+    {
         blackKingPos = move.to;
     }
     move.targetPiece = _board.getSquare(move.to.x, move.to.y);
@@ -175,11 +205,14 @@ void makeMove(Move& move, Board& _board, Coordinates& whiteKingPos, Coordinates&
     _board.setSquare(move.from.x, move.from.y, nullptr);
 }
 
-void undoMove(Move& move, Board& _board, Coordinates& whiteKingPos, Coordinates& blackKingPos, Piece* whiteKingPtr, Piece* blackKingPtr) {
-    if (move.piece = whiteKingPtr) {
+void undoMove(Move &move, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr)
+{
+    if (move.piece == whiteKingPtr)
+    {
         whiteKingPos = move.from;
     }
-    if (move.piece = blackKingPtr) {
+    if (move.piece == blackKingPtr)
+    {
         blackKingPos = move.from;
     }
 
@@ -187,8 +220,9 @@ void undoMove(Move& move, Board& _board, Coordinates& whiteKingPos, Coordinates&
     _board.setSquare(move.to.x, move.to.y, move.targetPiece);
 }
 
-ChessNotationType chessNotation(int x, int y) {
-    char file='a';
+ChessNotationType chessNotation(int x, int y)
+{
+    char file = 'a';
     switch (x)
     {
     case 0:
@@ -217,16 +251,20 @@ ChessNotationType chessNotation(int x, int y) {
         break;
     }
     int rank = y + 1;
-    return { file, rank };
+    return {file, rank};
 }
 
-int handleInput(std::string input, std::vector<Move>& allMoves) {
-    if (input.size() != 4) {
+int handleInput(std::string input, std::vector<Move> &allMoves)
+{
+    if (input.size() != 4)
+    {
         return -1;
     }
     int index = -1;
-    for (int i = 0; i < allMoves.size(); i++) {
-        if (input[0] == allMoves[i].fromNotation.file && input[1] - '0' == allMoves[i].fromNotation.rank && input[2] == allMoves[i].toNotation.file && input[3] - '0' == allMoves[i].toNotation.rank) {
+    for (int i = 0; i < allMoves.size(); i++)
+    {
+        if (input[0] == allMoves[i].fromNotation.file && input[1] - '0' == allMoves[i].fromNotation.rank && input[2] == allMoves[i].toNotation.file && input[3] - '0' == allMoves[i].toNotation.rank)
+        {
             index = i;
             break;
         }
@@ -234,10 +272,12 @@ int handleInput(std::string input, std::vector<Move>& allMoves) {
     return index;
 }
 
-Coordinates fromNotationToPos(char file, char rank) {
-    int x=0;
+Coordinates fromNotationToPos(char file, char rank)
+{
+    int x = 0;
     int y = (rank - '0') - 1;
-    switch (file) {
+    switch (file)
+    {
     case 'a':
         x = 0;
         break;
@@ -263,16 +303,52 @@ Coordinates fromNotationToPos(char file, char rank) {
         x = 7;
         break;
     }
-    return { x,y };
+    return {x, y};
 }
 
-bool isKingInCheck(Coordinates playerKingPos, std::vector<Coordinates> enemyMoves) {
+bool isKingInCheck(Coordinates playerKingPos, std::vector<Move> enemyMoves)
+{
     bool isCheck = false;
-    for (auto& move : enemyMoves) {
-        if (move.x==playerKingPos.x && move.y==playerKingPos.y) {
+    for (auto &move : enemyMoves)
+    {
+        if (move.to.x == playerKingPos.x && move.to.y == playerKingPos.y)
+        {
             isCheck = true;
             break;
         }
     }
     return isCheck;
+}
+
+void parseMoveVector(Board &_board, std::vector<Move> &legalMoves, std::vector<std::unique_ptr<Piece>> &piecesList)
+{
+    for (const auto &piece : piecesList)
+    {
+        Coordinates pos = _board.findPiece(piece.get());
+        std::vector<Coordinates> startingMoves = piece->LegalMoves(_board, pos);
+        for (const auto &m : startingMoves)
+        {
+            Move move;
+            move.piece = piece.get();
+            move.from = pos;
+            move.to = m;
+            move.fromNotation = chessNotation(pos.x, pos.y);
+            move.toNotation = chessNotation(m.x, m.y);
+            legalMoves.push_back(move);
+        }
+    }
+}
+
+void inputMove(std::vector<Move> allMoves, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr)
+{
+    std::string input;
+    int moveIndex = 0;
+    do
+    {
+        std::cin >> input;
+        moveIndex = handleInput(input, allMoves);
+    } while (moveIndex == -1);
+    Move move = allMoves[moveIndex];
+    makeMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+    move.piece->onMove();
 }
