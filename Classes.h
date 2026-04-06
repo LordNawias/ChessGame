@@ -98,6 +98,7 @@ public:
     {
         return colour;
     };
+    virtual bool shouldPromote(Coordinates to) const { return false; };
 };
 
 class Pawn : public Piece
@@ -172,6 +173,10 @@ public:
     void onMove() override
     {
         this->hasMoved = true;
+    }
+    bool shouldPromote(Coordinates to) const override
+    {
+        return (to.y == 0 || to.y == 7);
     }
 };
 

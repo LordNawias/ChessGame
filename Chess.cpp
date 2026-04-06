@@ -24,8 +24,10 @@ int handleInput(std::string input, std::vector<Move> &allMoves);
 void makeMove(Move &move, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr);
 bool isKingInCheck(Coordinates playerKingPos, std::vector<Move> enemyMoves);
 void parseMoveVector(Board &_board, std::vector<Move> &legalMoves, std::vector<std::unique_ptr<Piece>> &piecesList);
-void inputMove(std::vector<Move> allMoves, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr);
+void inputMove(std::vector<Move> allMoves, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr, std::vector<std::unique_ptr<Piece>> &pieces);
 void undoMove(Move &move, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr);
+void promotePawn(Move &move, Board &board, std::vector<std::unique_ptr<Piece>> &pieces, std::string choice);
+void removeCapturedPiece(Piece *captured, std::vector<std::unique_ptr<Piece>> &pieces);
 
 int main()
 {
@@ -161,7 +163,7 @@ void mainLoop(Board &_board, std::vector<std::unique_ptr<Piece>> &whitePieces, s
                 }
                 undoMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
             }
-            inputMove(legalWhiteMoves, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+            inputMove(legalWhiteMoves, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr, whitePieces);
         }
         if (activePlayer == BLACK)
         {
@@ -177,7 +179,7 @@ void mainLoop(Board &_board, std::vector<std::unique_ptr<Piece>> &whitePieces, s
                 }
                 undoMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
             }
-            inputMove(legalBlackMoves, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
+            inputMove(legalBlackMoves, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr, blackPieces);
         }
         if (activePlayer == WHITE)
         {
@@ -339,7 +341,7 @@ void parseMoveVector(Board &_board, std::vector<Move> &legalMoves, std::vector<s
     }
 }
 
-void inputMove(std::vector<Move> allMoves, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr)
+void inputMove(std::vector<Move> allMoves, Board &_board, Coordinates &whiteKingPos, Coordinates &blackKingPos, Piece *whiteKingPtr, Piece *blackKingPtr, std::vector<std::unique_ptr<Piece>> &pieces)
 {
     std::string input;
     int moveIndex = 0;
@@ -351,4 +353,59 @@ void inputMove(std::vector<Move> allMoves, Board &_board, Coordinates &whiteKing
     Move move = allMoves[moveIndex];
     makeMove(move, _board, whiteKingPos, blackKingPos, whiteKingPtr, blackKingPtr);
     move.piece->onMove();
+    if (move.targetPiece != nullptr)
+    {
+        removeCapturedPiece(move.targetPiece, pieces);
+    }
+    if (move.piece->shouldPromote(move.to))
+    {
+        std::cout << "Select promotion: \na.)Rook\nb).Knight\nc.)Bishop\nd.)Queen" << std::endl;
+        std::string promoteInput;
+        do
+        {
+            std::cin >> promoteInput;
+        } while (promoteInput != "a" && promoteInput != "b" && promoteInput != "c" && promoteInput != "d");
+        promotePawn(move, _board, pieces, promoteInput);
+    }
+}
+
+void promotePawn(Move &move, Board &board, std::vector<std::unique_ptr<Piece>> &pieces, std::string choice)
+{
+    for (auto it = pieces.begin(); it != pieces.end(); ++it)
+    {
+        if (it->get() == move.piece)
+        {
+            pieces.erase(it);
+            break;
+        }
+    }
+
+    std::unique_ptr<Piece> newPiece;
+
+    Colour colour = move.piece->getColour();
+
+    if (choice == "a")
+        newPiece = std::make_unique<Rook>(colour, false);
+    else if (choice == "b")
+        newPiece = std::make_unique<Knight>(colour);
+    else if (choice == "c")
+        newPiece = std::make_unique<Bishop>(colour);
+    else if (choice == "d")
+        newPiece = std::make_unique<Queen>(colour);
+
+    board.setSquare(move.to.x, move.to.y, newPiece.get());
+
+    pieces.push_back(std::move(newPiece));
+}
+
+void removeCapturedPiece(Piece *captured, std::vector<std::unique_ptr<Piece>> &pieces)
+{
+    for (auto it = pieces.begin(); it != pieces.end(); ++it)
+    {
+        if (it->get() == captured)
+        {
+            pieces.erase(it);
+            break;
+        }
+    }
 }
